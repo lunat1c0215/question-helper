@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Detector Lab</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #111318;
+        --panel: #191c23;
+        --line: #2a2f3a;
+        --fg: #e6e8ee;
+        --muted: #9aa3b2;
+        --ok: #5ad18a;
+        --warn: #ffb454;
+        --bad: #ff6b61;
+        --info: #8ab4ff;
+        --violet: #c9a0ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 14px/1.6 system-ui, "Segoe UI", sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(17, 19, 24, 0.94);
+        backdrop-filter: blur(8px);
+      }
+      h1 {
+        margin: 0;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .stat {
+        padding: 6px 9px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .stat b {
+        display: block;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--fg);
+      }
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 42vw);
+        height: calc(100vh - 104px);
+      }
+      .content {
+        padding: 20px;
+        overflow: auto;
+      }
+      .content h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .content p {
+        color: var(--muted);
+      }
+      .card {
+        margin: 16px 0;
+        padding: 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--panel);
+      }
+      textarea,
+      input[type="text"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0d0f13;
+        color: var(--fg);
+        font: inherit;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-top: 10px;
+      }
+      button {
+        padding: 7px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #232833;
+        color: var(--fg);
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #3b4352;
+      }
+      aside {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-left: 1px solid var(--line);
+        background: #0d0f13;
+      }
+      aside h3 {
+        margin: 0;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      #log {
+        flex: 1;
+        overflow: auto;
+        padding: 8px 12px;
+        font: 12px/1.5 ui-monospace, Consolas, monospace;
+      }
+      .entry {
+        padding: 2px 0;
+        border-bottom: 1px solid #181b21;
+        word-break: break-word;
+      }
+      .entry.dom-add {
+        color: var(--warn);
+      }
+      .entry.dom-remove {
+        color: var(--info);
+      }
+      .entry.key,
+      .entry.ptr {
+        color: var(--violet);
+      }
+      .entry.net {
+        color: var(--ok);
+      }
+      .entry.focus {
+        color: var(--bad);
+      }
+      .entry.text {
+        color: #7fd6d0;
+      }
+      .probe {
+        margin-top: 8px;
+        font: 12px ui-monospace, Consolas, monospace;
+        color: var(--muted);
+      }
+      .probe b {
+        color: var(--fg);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Detector Lab · 页面能看到什么</h1>
+      <div class="stats" id="stats"></div>
+    </header>
+
+    <main>
+      <section class="content">
+        <h2>模拟答题页</h2>
+        <p>
+          用扩展框选下面的题目。答案出现后把鼠标移到答案文字上，再滚动或点击页面，观察右侧日志与
+          elementFromPoint 的变化。
+        </p>
+
+        <div class="card">
+          <p><b>1. 文本泄漏探测</b>：粘贴答案文本，检查它是否出现在页面可读文本里。</p>
+          <input id="needle" type="text" placeholder="粘贴答案文本（可选）" />
+          <div class="row">
+            <button id="scanText" type="button">扫描文本</button>
+            <button id="snapshot" type="button">快照 DOM</button>
+          </div>
+          <div class="probe" id="probe">elementFromPoint：<b>-</b></div>
+        </div>
+
+        <div class="card">
+          <p><b>2. 焦点与输入</b>：点击输入框后再触发扩展，观察 blur / visibility 计数。</p>
+          <textarea rows="4" placeholder="在这里输入，测试扩展是否抢焦点…"></textarea>
+        </div>
+
+        <div class="card">
+          <p><b>3. 模拟题目</b></p>
+          <p style="font-size: 18px; color: var(--fg)">已知 x² − 5x + 6 = 0，求 x 的值。</p>
+          <p>框选这段文字，答案出现后把鼠标移到答案上，再滚动或点击页面。</p>
+        </div>
+      </section>
+
+      <aside>
+        <h3>事件日志</h3>
+        <div id="log"></div>
+      </aside>
+    </main>
+
+    <script>
+      (() => {
+        const statsEl = document.getElementById('stats');
+        const logEl = document.getElementById('log');
+        const probeEl = document.getElementById('probe');
+        const state = {
+          added: 0,
+          removed: 0,
+          nodes: 0,
+          keys: 0,
+          pointers: 0,
+          blurs: 0,
+          hidden: 0,
+          maxGap: 0,
+          resources: new Set(),
+        };
+
+        function describe(node) {
+          if (!node || node.nodeType !== 1) return String((node && node.nodeName) || '-');
+          const id = node.id ? `#${node.id}` : '';
+          const cls =
+            typeof node.className === 'string' && node.className.trim()
+              ? `.${node.className.trim().split(/\s+/).join('.')}`
+              : '';
+          const shadow = node.shadowRoot ? ' [open-shadow]' : '';
+          return `<${node.tagName.toLowerCase()}${id}${cls}>${shadow}`;
+        }
+
+        function log(kind, text) {
+          const entry = document.createElement('div');
+          entry.className = `entry ${kind}`;
+          entry.textContent = `${new Date().toLocaleTimeString()}  ${text}`;
+          logEl.prepend(entry);
+          while (logEl.children.length > 400) logEl.lastElementChild.remove();
+        }
+
+        function render() {
+          state.nodes = document.querySelectorAll('*').length;
+          const items = [
+            ['新增节点', state.added],
+            ['移除节点', state.removed],
+            ['当前 DOM 节点', state.nodes],
+            ['键盘事件', state.keys],
+            ['指针事件', state.pointers],
+            ['blur', state.blurs],
+            ['visibility hidden', state.hidden],
+            ['最大帧间隔', `${state.maxGap.toFixed(1)}ms`],
+            ['资源域名', state.resources.size],
+          ];
+          statsEl.replaceChildren(
+            ...items.map(([label, value]) => {
+              const card = document.createElement('div');
+              card.className = 'stat';
+              const number = document.createElement('b');
+              number.textContent = String(value);
+              card.append(number, document.createTextNode(label));
+              return card;
+            }),
+          );
+        }
+
+        const observer = new MutationObserver((records) => {
+          for (const record of records) {
+            if (isOwnNode(record.target)) continue;
+            for (const node of record.addedNodes) {
+              if (node.nodeType !== 1 || isOwnNode(node)) continue;
+              state.added += 1;
+              log('dom-add', `+ ${describe(node)}  parent=${describe(record.target)}`);
+            }
+            for (const node of record.removedNodes) {
+              if (node.nodeType !== 1) continue;
+              state.removed += 1;
+              log('dom-remove', `- ${describe(node)}`);
+            }
+          }
+          render();
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+
+        function isOwnNode(node) {
+          return (
+            node === statsEl ||
+            statsEl.contains(node) ||
+            node === logEl ||
+            logEl.contains(node) ||
+            node === probeEl ||
+            probeEl.contains(node)
+          );
+        }
+
+        function safeHost(name) {
+          try {
+            return new URL(name, location.href).host;
+          } catch {
+            return '';
+          }
+        }
+
+        function recordResource(name) {
+          const host = safeHost(name);
+          if (!host || state.resources.has(host)) return;
+          state.resources.add(host);
+          log('net', `resource ${host}`);
+        }
+
+        for (const entry of performance.getEntriesByType('resource')) recordResource(entry.name);
+
+        try {
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) recordResource(entry.name);
+            render();
+          }).observe({ type: 'resource', buffered: true });
+        } catch {
+          /* unsupported */
+        }
+
+        window.addEventListener(
+          'keydown',
+          (event) => {
+            state.keys += 1;
+            if (
+              event.ctrlKey ||
+              event.altKey ||
+              event.metaKey ||
+              event.key.startsWith('Arrow') ||
+              event.key === 'Escape'
+            ) {
+              const mods = [
+                event.ctrlKey && 'Ctrl',
+                event.shiftKey && 'Shift',
+                event.altKey && 'Alt',
+                event.metaKey && 'Meta',
+              ]
+                .filter(Boolean)
+                .join('+');
+              log('key', `key=${event.key} mods=${mods || '-'} target=${describe(event.target)}`);
+            }
+            render();
+          },
+          true,
+        );
+
+        document.addEventListener(
+          'pointerdown',
+          (event) => {
+            state.pointers += 1;
+            log(
+              'ptr',
+              `button=${event.button} at=${Math.round(event.clientX)},${Math.round(
+                event.clientY,
+              )} target=${describe(event.target)}`,
+            );
+            render();
+          },
+          true,
+        );
+
+        let probeTimer = null;
+        document.addEventListener(
+          'mousemove',
+          (event) => {
+            if (probeTimer) return;
+            const x = event.clientX;
+            const y = event.clientY;
+            probeTimer = setTimeout(() => {
+              probeTimer = null;
+              const element = document.elementFromPoint(x, y);
+              const value = document.createElement('b');
+              value.textContent = describe(element);
+              probeEl.replaceChildren(document.createTextNode('elementFromPoint：'), value);
+            }, 60);
+          },
+          true,
+        );
+
+        window.addEventListener('blur', () => {
+          state.blurs += 1;
+          log('focus', 'window blur');
+          render();
+        });
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState !== 'hidden') return;
+          state.hidden += 1;
+          log('focus', 'visibility hidden');
+          render();
+        });
+
+        let lastFrame = performance.now();
+        function frame(now) {
+          const gap = now - lastFrame;
+          lastFrame = now;
+          if (gap > state.maxGap) state.maxGap = gap;
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+
+        document.getElementById('scanText').addEventListener('click', () => {
+          const needle = document.getElementById('needle').value.trim();
+          const inner = document.body.innerText || '';
+          const text = document.documentElement.textContent || '';
+          log(
+            'text',
+            `innerText=${inner.length}B textContent=${text.length}B needle_inner=${
+              needle ? inner.includes(needle) : false
+            } needle_text=${needle ? text.includes(needle) : false}`,
+          );
+          render();
+        });
+
+        document.getElementById('snapshot').addEventListener('click', () => {
+          const bodyChildren = Array.from(document.body.children).map(describe).join(' ');
+          const htmlChildren = Array.from(document.documentElement.children).map(describe).join(' ');
+          log('text', `body children: ${bodyChildren}`);
+          log('text', `html children: ${htmlChildren}`);
+        });
+
+        log('text', 'lab ready');
+        render();
+      })();
+    </script>
+  </body>
+</html>

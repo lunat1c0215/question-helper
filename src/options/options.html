@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reading Helper 设置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Reading Helper</h1>
+        <p class="muted">
+          框选区域会发送到 DeepSeek 识别并作答。密钥只保存在本机
+          <code>chrome.storage.local</code>，不会同步到其它设备。
+        </p>
+      </header>
+
+      <section>
+        <h2>接口</h2>
+        <label class="field">
+          <span>API Key</span>
+          <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-..." />
+        </label>
+        <label class="field">
+          <span>模型</span>
+          <input id="model" type="text" spellcheck="false" placeholder="deepseek-flash" />
+        </label>
+        <label class="field">
+          <span>Base URL</span>
+          <input id="baseUrl" type="text" spellcheck="false" placeholder="https://api.deepseek.com" />
+        </label>
+        <label class="field">
+          <span>最大输出 tokens</span>
+          <input id="maxTokens" type="number" min="64" max="8192" step="32" />
+        </label>
+      </section>
+
+      <section>
+        <h2>联网检索</h2>
+        <label class="field checkbox">
+          <input id="searchEnabled" type="checkbox" />
+          <span>作答前先用 DeepSeek Search 检索题目（提升时政、新闻、具体数据类题目的准确率）</span>
+        </label>
+        <label class="field">
+          <span>检索条数（1–10）</span>
+          <input id="searchCount" type="number" min="1" max="10" step="1" />
+        </label>
+        <p class="muted">
+          每题多一次识图调用和一次检索请求（$0.75 / 1000 次，失败与空结果不计费），通常多 1–3 秒。
+          检索失败、超时或余额不足会自动跳过，不影响正常作答。模型判断不需要联网的题目会直接作答。
+        </p>
+      </section>
+
+      <section>
+        <h2>显示</h2>
+        <label class="field">
+          <span>不透明度 <output id="opacityValue"></output></span>
+          <input id="opacity" type="range" min="0.35" max="1" step="0.05" />
+        </label>
+        <p class="muted">
+          答题时可用 <code>Ctrl+Shift+↑ / ↓</code> 实时调节，松开按键约 0.25 秒后自动保存。
+        </p>
+        <label class="field">
+          <span>选区描边透明度 <output id="selectionOpacityValue"></output></span>
+          <input id="selectionOpacity" type="range" min="0" max="1" step="0.05" />
+        </label>
+        <p class="muted">
+          拖动框选时选区边框的不透明度，0 = 完全隐藏（盲选），建议 0.3–0.6；对普通模式和考试模式同时生效。
+        </p>
+        <label class="field">
+          <span>字号（px）</span>
+          <input id="fontSize" type="number" min="12" max="18" step="1" />
+        </label>
+        <label class="field">
+          <span>自动隐藏（毫秒，0 = 常驻）</span>
+          <input id="autoHideMs" type="number" min="0" max="60000" step="500" />
+        </label>
+        <label class="field checkbox">
+          <input id="examMode" type="checkbox" />
+          <span>考试模式：答案最多 3.5 秒后自动隐藏</span>
+        </label>
+      </section>
+
+      <section>
+        <h2>快捷键</h2>
+        <dl class="keys">
+          <dt>Ctrl+Shift+X</dt><dd>框选提问（每次都需要拖框选择题目区域）</dd>
+          <dt>Ctrl+Shift+Z</dt><dd>显示/隐藏解析（答案可见时，输入框内不拦截）</dd>
+          <dt>Ctrl+Shift+↑ / ↓</dt><dd>提高 / 降低答案不透明度（0.35–1.0）</dd>
+          <dt>Ctrl+Shift+0</dt><dd>恢复默认不透明度 0.85</dd>
+          <dt>Ctrl+Shift+H</dt><dd>隐藏/恢复答案</dd>
+          <dt>Ctrl+Shift+Y</dt><dd>复制当前内容</dd>
+          <dt>Esc</dt><dd>取消框选 / 隐藏答案</dd>
+        </dl>
+        <p class="muted">
+          单键只能用媒体键：在快捷键页给「Capture a region (single media key)」分配
+          MediaStop 或 MediaPlayPause。鼠标侧键需要用 AutoHotkey 或鼠标驱动映射成
+          Ctrl+Shift+X，见 README。
+        </p>
+        <p id="shortcutState" class="hint"></p>
+        <button id="shortcuts" type="button" class="link">修改快捷键</button>
+      </section>
+
+      <footer>
+        <button id="save" type="button">保存</button>
+        <button id="test" type="button" class="secondary">测试连接</button>
+        <span id="status" role="status"></span>
+      </footer>
+    </main>
+    <script src="options.js" type="module"></script>
+  </body>
+</html>

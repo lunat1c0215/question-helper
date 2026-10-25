@@ -1,0 +1,11 @@
+{
+  "name": "question-helper",
+  "version": "0.2.4",
+  "private": true,
+  "type": "module",
+  "description": "Chrome MV3 region-capture answer helper",
+  "scripts": {
+    "test": "node --test test/sse.test.js test/channel.test.js test/crop-math.test.js test/search-context.test.js test/search.test.js test/settings.test.js test/llm.test.js test/ask-flow.test.js",
+    "check": "node scripts/check.mjs"
+  }
+}
