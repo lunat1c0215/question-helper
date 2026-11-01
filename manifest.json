@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Reading Helper",
-  "version": "0.2.4",
-  "description": "Capture a region and get a short answer.",
+  "version": "0.3.0",
+  "description": "Capture a region and get a short answer (Chrome / Edge).",
   "permissions": [
     "activeTab",
     "scripting",
@@ -33,6 +33,20 @@
     },
     "capture_media": {
       "description": "Capture a region (single media key)"
+    },
+    "capture_multi": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+C",
+        "mac": "Command+Shift+C"
+      },
+      "description": "Capture a region and ask (multiple choice)"
+    },
+    "capture_multi_alt": {
+      "suggested_key": {
+        "default": "Alt+Shift+C",
+        "mac": "Alt+Shift+C"
+      },
+      "description": "Capture a region and ask (multiple choice, fallback key)"
     }
   }
 }

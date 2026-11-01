@@ -1,6 +1,11 @@
 import { createChannelSplitter } from '../shared/channel.js';
 import { createSseParser } from '../shared/sse.js';
-import { buildExtractText, buildUserText, EXTRACT_PROMPT, SYSTEM_PROMPT } from '../shared/prompt.js';
+import {
+  buildExtractText,
+  buildSystemPrompt,
+  buildUserText,
+  EXTRACT_PROMPT,
+} from '../shared/prompt.js';
 import {
   buildOriQuestion,
   buildSearchQuery,
@@ -20,10 +25,11 @@ const MAX_ATTEMPTS = 3;
  *   signal: AbortSignal,
  *   onDelta: (delta: { channel: 'answer' | 'explanation', text: string }) => void,
  *   onStatus?: (text: string) => void,
+ *   mode?: 'single' | 'multi',
  * }} options
  */
-export async function ask({ imageDataUrl, settings, signal, onDelta, onStatus }) {
-  const reference = await gatherReference({ imageDataUrl, settings, signal, onStatus });
+export async function ask({ imageDataUrl, settings, signal, onDelta, onStatus, mode = 'single' }) {
+  const reference = await gatherReference({ imageDataUrl, settings, signal, onStatus, mode });
   let attempt = 1;
 
   for (;;) {
@@ -33,6 +39,7 @@ export async function ask({ imageDataUrl, settings, signal, onDelta, onStatus })
         imageDataUrl,
         settings,
         reference,
+        mode,
         signal,
         onDelta: (delta) => {
           emitted = true;
@@ -61,13 +68,13 @@ export async function ask({ imageDataUrl, settings, signal, onDelta, onStatus })
  * Every failure here degrades to answering without references: search is an
  * accuracy aid, never a hard dependency.
  */
-async function gatherReference({ imageDataUrl, settings, signal, onStatus }) {
+async function gatherReference({ imageDataUrl, settings, signal, onStatus, mode }) {
   if (!settings?.search?.enabled) return '';
 
   let extraction;
   try {
     // Extraction stays silent: the panel should never advertise an OCR stage.
-    extraction = await extractQuestion({ imageDataUrl, settings, signal });
+    extraction = await extractQuestion({ imageDataUrl, settings, signal, mode });
   } catch (error) {
     throwIfAborted(error, signal);
     onStatus?.('作答中…');
@@ -103,7 +110,7 @@ async function gatherReference({ imageDataUrl, settings, signal, onStatus }) {
   }
 }
 
-async function extractQuestion({ imageDataUrl, settings, signal }) {
+async function extractQuestion({ imageDataUrl, settings, signal, mode }) {
   const body = {
     model: settings.model,
     stream: false,
@@ -115,7 +122,7 @@ async function extractQuestion({ imageDataUrl, settings, signal }) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: buildExtractText() },
+          { type: 'text', text: buildExtractText(mode) },
           { type: 'image_url', image_url: { url: imageDataUrl, detail: 'original' } },
         ],
       },
@@ -177,7 +184,7 @@ function throwIfAborted(error, signal) {
   }
 }
 
-async function requestOnce({ imageDataUrl, settings, reference, signal, onDelta }) {
+async function requestOnce({ imageDataUrl, settings, reference, mode, signal, onDelta }) {
   const body = {
     model: settings.model,
     stream: true,
@@ -186,11 +193,11 @@ async function requestOnce({ imageDataUrl, settings, reference, signal, onDelta 
     // For a short answer we want the budget spent on content, not reasoning.
     thinking: { type: 'disabled' },
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: buildSystemPrompt(mode) },
       {
         role: 'user',
         content: [
-          { type: 'text', text: buildUserText('', reference) },
+          { type: 'text', text: buildUserText('', reference, mode) },
           { type: 'image_url', image_url: { url: imageDataUrl, detail: 'original' } },
         ],
       },

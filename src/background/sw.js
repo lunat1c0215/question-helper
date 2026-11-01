@@ -5,9 +5,10 @@ import { ask } from './llm.js';
 
 const RESTRICTED_URL = /^(chrome|chrome-extension|edge|about|devtools|view-source|data):/i;
 const WEB_STORE_URL = /^https:\/\/chromewebstore\.google\.com\//i;
+const EDGE_STORE_URL = /^https:\/\/microsoftedge\.microsoft\.com\/addons/i;
 const MAX_SHOT_CHARS = 40_000_000;
 
-/** @type {null | { requestId: string, tabId: number, shot: string | null, controller: AbortController, keepalive: number | null }} */
+/** @type {null | { requestId: string, tabId: number, mode: 'single' | 'multi', shot: string | null, controller: AbortController, keepalive: number | null }} */
 let session = null;
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -17,11 +18,13 @@ chrome.runtime.onInstalled.addListener((details) => {
 });
 
 chrome.commands.onCommand.addListener((command) => {
-  if (command === 'capture' || command === 'capture_media') void captureActiveTab();
+  if (command === 'capture' || command === 'capture_media') void captureActiveTab(undefined, 'single');
+  else if (command === 'capture_multi') void captureActiveTab(undefined, 'multi');
+  else if (command === 'capture_multi_alt') void captureActiveTab(undefined, 'multi');
 });
 
 chrome.action.onClicked.addListener((tab) => {
-  void captureActiveTab(tab);
+  void captureActiveTab(tab, 'single');
 });
 
 chrome.runtime.onMessage.addListener((message, sender) => {
@@ -42,9 +45,10 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 });
 
 /**
- * @param {chrome.tabs.Tab} [tabArgument]
+ * @param {chrome.tabs.Tab | undefined} [tabArgument]
+ * @param {'single' | 'multi'} [mode]
  */
-async function captureActiveTab(tabArgument) {
+async function captureActiveTab(tabArgument, mode = 'single') {
   const tab = tabArgument ?? (await chrome.tabs.query({ active: true, currentWindow: true }))[0];
   if (!tab || typeof tab.id !== 'number') return;
 
@@ -71,6 +75,7 @@ async function captureActiveTab(tabArgument) {
     session = {
       requestId,
       tabId: tab.id,
+      mode,
       shot,
       controller: new AbortController(),
       keepalive: null,
@@ -117,6 +122,7 @@ async function handleRegion(message, sender) {
     await ask({
       imageDataUrl: dataUrl,
       settings,
+      mode: current.mode,
       signal: current.controller.signal,
       onDelta: flusher.push,
       onStatus: (text) => {
@@ -260,5 +266,5 @@ function toQhError(error) {
 
 function isRestricted(url) {
   if (!url) return false;
-  return RESTRICTED_URL.test(url) || WEB_STORE_URL.test(url);
+  return RESTRICTED_URL.test(url) || WEB_STORE_URL.test(url) || EDGE_STORE_URL.test(url);
 }

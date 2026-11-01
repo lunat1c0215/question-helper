@@ -4,6 +4,7 @@ const $ = (id) => document.getElementById(id);
 
 const status = $('status');
 let statusTimer = null;
+const IS_EDGE = /Edg\//.test(navigator.userAgent);
 
 function setStatus(text, kind = '') {
   status.textContent = text;
@@ -130,7 +131,8 @@ $('test').addEventListener('click', async () => {
 });
 
 $('shortcuts').addEventListener('click', () => {
-  chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }).catch(() => {});
+  const page = IS_EDGE ? 'edge://extensions/shortcuts' : 'chrome://extensions/shortcuts';
+  chrome.tabs.create({ url: page }).catch(() => {});
 });
 
 async function renderShortcutState() {
@@ -138,15 +140,19 @@ async function renderShortcutState() {
   try {
     const commands = await chrome.commands.getAll();
     const capture = commands.find((command) => command.name === 'capture');
+    const multi = commands.find((command) => command.name === 'capture_multi');
+    const multiAlt = commands.find((command) => command.name === 'capture_multi_alt');
     const media = commands.find((command) => command.name === 'capture_media');
     const parts = [capture?.shortcut ? `框选：${capture.shortcut}` : '框选：未分配'];
+    const multiKey = multi?.shortcut || multiAlt?.shortcut;
+    parts.push(multiKey ? `多选：${multiKey}` : '多选：未分配');
     if (media?.shortcut) parts.push(`单键：${media.shortcut}`);
 
     node.textContent = parts.join(' · ');
-    if (capture?.shortcut) {
+    if (capture?.shortcut && multiKey) {
       node.className = 'hint';
     } else {
-      node.textContent = `${parts.join(' · ')}：点「修改快捷键」手动设置`;
+      node.textContent = `${parts.join(' · ')}：点「修改快捷键」手动补全`;
       node.className = 'hint warn';
     }
   } catch {

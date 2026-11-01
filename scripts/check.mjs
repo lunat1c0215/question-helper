@@ -40,6 +40,7 @@ if (existsSync(manifestPath)) {
   if (optionsPage) check(existsSync(join(root, optionsPage)), `missing options page: ${optionsPage}`);
 
   check(Boolean(manifest.commands?.capture), 'commands.capture is missing');
+  check(Boolean(manifest.commands?.capture_multi), 'commands.capture_multi is missing');
 }
 
 const contentFiles = ['src/content/select.js', 'src/content/display.js'];
@@ -72,6 +73,7 @@ if (existsSync(promptPath)) {
   const prompt = readFileSync(promptPath, 'utf8');
   check(prompt.includes('【答案】'), 'prompt must request the answer marker');
   check(prompt.includes('【解析】'), 'prompt must request the explanation marker');
+  check(prompt.includes('多选题'), 'prompt must mention multiple-choice questions');
 }
 
 for (const file of walk(join(root, 'src'))) {

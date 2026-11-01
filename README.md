@@ -9,11 +9,22 @@ Chrome MV3 搜题插件：框选屏幕区域 → DeepSeek 视觉模型 → 以�
 3. 首次安装会自动打开设置页，填入 DeepSeek API Key。
    默认模型 `deepseek-flash`，Base URL `https://api.deepseek.com`。
 
+### Edge
+
+1. 打开 `edge://extensions`，开启「开发人员模式」。
+2. 点「加载解压缩的扩展」，选择本目录。
+3. 快捷键页是 `edge://extensions/shortcuts`（设置页的「修改快捷键」会自动识别 Edge 并打开对应页面）。
+4. Edge 商店页面（`microsoftedge.microsoft.com/addons`）与 `edge://` 页面同样不支持截图，会走角标报错。
+
+代码只用 Chromium 通用 API（`commands` / `scripting` / `tabs.captureVisibleTab` / `storage`），无需为 Edge 维护分支；要求 Edge 116+（Chromium 内核同版本能力）。
+
 ## 使用
 
 | 快捷键 | 行为 |
 |---|---|
 | `Ctrl+Shift+X` | 框选提问，每次都需要拖框选择区域 |
+| `Ctrl+Shift+C` | 框选多选题，提示模型找出全部正确选项 |
+| `Alt+Shift+C` | 多选备用键（`Ctrl+Shift+C` 被 DevTools 占用时使用） |
 | `Ctrl+Shift+Z` | 显示/隐藏解析（整段一次性出现；答案不可见或焦点在输入框时不拦截） |
 | `Ctrl+Shift+↑ / ↓` | 提高 / 降低答案不透明度（0.35–1.0，实时生效并保存） |
 | `Ctrl+Shift+0` | 恢复默认不透明度 0.85 |
@@ -22,6 +33,10 @@ Chrome MV3 搜题插件：框选屏幕区域 → DeepSeek 视觉模型 → 以�
 | `Esc` | 取消框选 / 隐藏答案 |
 
 快捷键可在 `chrome://extensions/shortcuts` 修改。若快捷键没有生效，通常是已被其它扩展占用（Chrome 不会自动覆盖），在该页面重新按一次 `Ctrl+Shift+X` 即可；设置页会显示当前实际分配的按键。
+
+多选题模式只改变提示词，不改变截图与检索流程：模型被要求列出**全部**正确选项的字母（按字母升序连写，如 `ABD`），并明确禁止只写一个。
+
+`Ctrl+Shift+C` 与 Chrome/Edge 的 DevTools「检查元素」冲突，浏览器内置快捷键优先级高于扩展（官方文档明确说明这一点），因此额外注册了 `Alt+Shift+C` 作为备用。两者都失效时到快捷键页手动分配，设置页会显示实际生效的按键。
 
 ## 联网检索
 

@@ -88,12 +88,13 @@ function installFetch({ needsSearch = true, searchStatus = 200 } = {}) {
   };
 }
 
-async function runAsk() {
+async function runAsk(mode = 'single') {
   const statuses = [];
   const deltas = [];
   await ask({
     imageDataUrl: 'data:image/png;base64,AAAA',
     settings,
+    mode,
     signal: new AbortController().signal,
     onDelta: (delta) => deltas.push(delta),
     onStatus: (text) => statuses.push(text),
@@ -153,6 +154,20 @@ test('degrades to a plain answer when search is rejected', async () => {
     );
     const chat = stub.calls.at(-1);
     assert.ok(!chat.body.messages[1].content[0].text.includes('参考网页'));
+  } finally {
+    stub.restore();
+  }
+});
+
+test('multi-choice mode sends the multi prompt to the model', async () => {
+  const stub = installFetch({ needsSearch: false });
+  try {
+    await runAsk('multi');
+
+    const chat = stub.calls.at(-1);
+    assert.match(chat.body.messages[0].content, /多选题/);
+    assert.match(chat.body.messages[0].content, /全部正确选项/);
+    assert.match(chat.body.messages[1].content[0].text, /多选题/);
   } finally {
     stub.restore();
   }
