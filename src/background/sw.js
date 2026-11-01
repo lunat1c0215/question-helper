@@ -20,7 +20,6 @@ chrome.runtime.onInstalled.addListener((details) => {
 chrome.commands.onCommand.addListener((command) => {
   if (command === 'capture' || command === 'capture_media') void captureActiveTab(undefined, 'single');
   else if (command === 'capture_multi') void captureActiveTab(undefined, 'multi');
-  else if (command === 'capture_multi_alt') void captureActiveTab(undefined, 'multi');
 });
 
 chrome.action.onClicked.addListener((tab) => {

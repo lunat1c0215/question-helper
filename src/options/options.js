@@ -141,10 +141,9 @@ async function renderShortcutState() {
     const commands = await chrome.commands.getAll();
     const capture = commands.find((command) => command.name === 'capture');
     const multi = commands.find((command) => command.name === 'capture_multi');
-    const multiAlt = commands.find((command) => command.name === 'capture_multi_alt');
     const media = commands.find((command) => command.name === 'capture_media');
     const parts = [capture?.shortcut ? `框选：${capture.shortcut}` : '框选：未分配'];
-    const multiKey = multi?.shortcut || multiAlt?.shortcut;
+    const multiKey = multi?.shortcut;
     parts.push(multiKey ? `多选：${multiKey}` : '多选：未分配');
     if (media?.shortcut) parts.push(`单键：${media.shortcut}`);
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Reading Helper",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Capture a region and get a short answer (Chrome / Edge).",
   "permissions": [
     "activeTab",
@@ -36,17 +36,10 @@
     },
     "capture_multi": {
       "suggested_key": {
-        "default": "Ctrl+Shift+C",
-        "mac": "Command+Shift+C"
+        "default": "Alt+A",
+        "mac": "Alt+A"
       },
       "description": "Capture a region and ask (multiple choice)"
-    },
-    "capture_multi_alt": {
-      "suggested_key": {
-        "default": "Alt+Shift+C",
-        "mac": "Alt+Shift+C"
-      },
-      "description": "Capture a region and ask (multiple choice, fallback key)"
     }
   }
 }
